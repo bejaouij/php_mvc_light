@@ -18,6 +18,6 @@
             var_dump($this->pdo);
             $data = $this->pdo->query($query);
 
-            return $data->fetchAll();
+            return ($data) ? $data->fetchAll() : array();
         }
     }
