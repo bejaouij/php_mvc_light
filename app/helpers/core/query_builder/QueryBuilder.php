@@ -15,7 +15,6 @@
 
         public function query($query) : array
         {
-            var_dump($this->pdo);
             $data = $this->pdo->query($query);
 
             return ($data) ? $data->fetchAll() : array();
