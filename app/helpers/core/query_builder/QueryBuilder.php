@@ -21,5 +21,3 @@
             return $data->fetchAll();
         }
     }
-
-    $queryBuilder = new QueryBuilder();
