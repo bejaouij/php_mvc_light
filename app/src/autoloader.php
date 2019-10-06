@@ -4,7 +4,7 @@
 
         $classNamespace = substr($class, 0, (strrpos($class, '\\') + 1 ));
         $classname = substr($class, (strrpos($class, '\\') + 1));
-        $classpath = $appConfig['root_dir'] . strtolower(str_replace('\\', '/', $classNamespace)) . $classname . '.php';
+        $classpath = $appConfig['root_dir'] . DIRECTORY_SEPARATOR .strtolower(str_replace('\\', '/', $classNamespace)) . $classname . '.php';
 
         require($classpath);
     });
