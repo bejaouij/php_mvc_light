@@ -4,7 +4,7 @@
     use \PDO;
     use App\Helpers\Core\Config_Manager\ConfigManager;
 
-    class QueryBuilder
+    final class QueryBuilder
     {
         private $pdo;
 
@@ -12,16 +12,21 @@
             $dbConfig = ConfigManager::getDatabaseConfig();
 
             $this->pdo = new PDO($dbConfig['driver'] . ':host=' . $dbConfig['host'] . ';dbname=' . $dbConfig['database'], $dbConfig['username'], $dbConfig['password']);
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         }
 
         public function query($query, array $params = []) : array
         {
-            if(count($params) == 0) {
-                $statement = $this->pdo->query($query);
-            } else {
-                $statement = $this->pdo->prepare($query);
+            try {
+                if(count($params) == 0) {
+                    $statement = $this->pdo->query($query);
+                } else {
+                    $statement = $this->pdo->prepare($query);
 
-                $statement->execute($params);
+                    $statement->execute($params);
+                }
+            } catch (\PDOException $e) {
+                echo $e->getMessage();
             }
 
             return ($statement) ? $statement->fetchAll() : array();
