@@ -8,7 +8,7 @@
         private $pdo;
 
         public function __construct() {
-            $dbConfig = require_once(__DIR__ . '/../../../config/database.php');
+            $dbConfig = require(__DIR__ . '/../../../config/database.php');
 
             $this->pdo = new PDO($dbConfig['driver'] . ':host=' . $dbConfig['host'] . ';dbname=' . $dbConfig['database'], $dbConfig['username'], $dbConfig['password']);
         }
