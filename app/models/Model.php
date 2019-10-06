@@ -72,7 +72,27 @@
         }
 
         public function create() : Model {
-            throw new \Exception('Not implemented.');
+            $queryBuilder = new QueryBuilder();
+
+            $query = 'INSERT INTO ' . $this::getDatabaseSchema() . '.' . $this::getMostLikelyTableName() . '(';
+
+            $query .= implode(', ', array_keys($this->getData()));
+            $query .= ') VALUES(';
+
+            foreach(array_keys($this->getData()) as $column) {
+                $query .= ':' . $column . ', ';
+            }
+
+            $query = substr_replace($query, ') RETURNING ', '-2');
+            $query .= get_called_class()::$primaryKey;
+
+            $data = $queryBuilder->query($query, $this->getData());
+
+            if(count($data) > 0) {
+                $this->setData($this::$primaryKey, $data[0][$this::$primaryKey]);
+            }
+
+            return $this;
         }
 
         public function update() : Model {
