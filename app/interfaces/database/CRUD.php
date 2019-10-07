@@ -7,7 +7,7 @@
 	{
 		public static function createMany(Array $models) : int;
         public static function readById(string $id) : Model;
-		public static function readBy(string $field, string $value, string $operator = '=') : array;
+		public static function readBy(string $field, string $value, string $operator = '=', bool $returnObject = true) : array;
 		public static function readAll() : array;
 		public static function updateMany(array $models): int;
 		public static function deleteMany(array $models) : int;

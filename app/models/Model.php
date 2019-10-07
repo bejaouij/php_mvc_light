@@ -27,6 +27,10 @@
             return ConfigManager::getDatabaseConfig('schema');
         }
 
+        private static function getFullTableName() {
+            return self::getDatabaseSchema() . '.' . self::getMostLikelyTableName();
+        }
+
         public static function createMany(Array $models) : int {
             throw new \Exception('Not implemented.');
         }
@@ -37,7 +41,7 @@
             $calledClass = get_called_class();
             $model = new $calledClass();
 
-            $data = $queryBuilder->query('SELECT * FROM ' . self::getDatabaseSchema() . '.' . self::getMostLikelyTableName() . ' WHERE ' . self::getPrimaryKey() . ' = ?', [$id]);
+            $data = $queryBuilder->query('SELECT * FROM ' . self::getFullTableName() . ' WHERE ' . self::getPrimaryKey() . ' = ?', [$id]);
 
             if(count($data) > 0) {
                 $data = array_shift($data);
@@ -48,16 +52,32 @@
             return $model;
         }
 
-        public static function readBy(string $field, string $value) : array {
+        public static function readBy(string $field, string $value, string $operator = '=', bool $returnObject = true) : array {
+            $calledClass = get_called_class();
             $queryBuilder = new QueryBuilder();
 
-            return $queryBuilder->query('SELECT * FROM ' . self::getFullTableName() . ' WHERE ' . $field . ' ' . $operator . ' ?', [$value]);
+            $dataCollection = $queryBuilder->query('SELECT * FROM ' . self::getFullTableName() . ' WHERE ' . $field . ' ' . $operator . ' ?', [$value]);
+
+            if($returnObject) {
+                $models = array();
+
+                foreach($dataCollection as $data) {
+                    $model = new $calledClass();
+                    $model = $model->hydrate($data);
+
+                    array_push($models, $model);
+                }
+
+                return $models;
+            } else {
+                return $dataCollection;
+            }
         }
 
         public static function readAll() : array {
             $queryBuilder = new QueryBuilder();
 
-            return $queryBuilder->query('SELECT * FROM ' . self::getDatabaseSchema() . '.' . self::getMostLikelyTableName());
+            return $queryBuilder->query('SELECT * FROM ' . self::getFullTableName());
         }
 
         public static function updateMany(array $models): int {
@@ -65,15 +85,29 @@
         }
 
         public static function deleteMany(array $models) : int {
-            throw new \Exception('Not implemented.');
+            $affectedRowsCount = 0;
+
+            foreach($models as $model) {
+                $affectedRowsCount += $model->delete(false) ? 1 : 0;
+            }
+
+            return $affectedRowsCount;
         }
 
         public static function deleteById(string $id) : bool {
-            throw new \Exception('Not implemented.');
+            $affectedRowsCount = self::deleteBy(self::getPrimaryKey(), $id);
+
+            return $affectedRowsCount == 1;
         }
 
-        public static function deleteBy(string $field, string $value) : int {
-            throw new \Exception('Not implemented.');
+        public static function deleteBy(string $field, string $value, string $operator = '=') : int {
+            $queryBuilder = new QueryBuilder();
+
+            $query = 'DELETE FROM ' . self::getFullTableName() . ' WHERE ' . $field . ' ' . $operator . ' ?';
+
+            $data = $queryBuilder->query($query, [0 => $value]);
+
+            return count($data);
         }
 
         public function create() : Model {
@@ -83,7 +117,7 @@
                 throw new InvalidDataAccessException('No data to insert.');
             }
 
-            $query = 'INSERT INTO ' . $this::getDatabaseSchema() . '.' . $this::getMostLikelyTableName() . '(';
+            $query = 'INSERT INTO ' . self::getFullTableName() . '(';
 
             $query .= implode(', ', array_keys($this->getData()));
             $query .= ') VALUES(';
@@ -100,6 +134,8 @@
             if(count($data) > 0) {
                 $this->setData($this::$primaryKey, $data[0][$this::$primaryKey]);
             }
+
+            #TODO REFRESH THE OBJECT TO RETRIEVE DEFAULT VALUE
 
             return $this;
         }
@@ -118,7 +154,7 @@
             $dataToUpdate = $this->getData();
             unset($dataToUpdate[self::getPrimaryKey()]);
 
-            $query = 'UPDATE ' . $this::getDatabaseSchema() . '.' . $this::getMostLikelyTableName() . ' SET ';
+            $query = 'UPDATE ' . self::getFullTableName() . ' SET ';
 
             foreach(array_keys($dataToUpdate) as $column) {
                 $query .= $column . ' = :' . $column . ', ';
@@ -133,8 +169,14 @@
             return $this;
         }
 
-        public function delete() : Model {
-            throw new \Exception('Not implemented.');
+        public function delete(bool $returnObject = true) {
+            if(empty($this->getData(self::getPrimaryKey()))) {
+                throw new InvalidDataAccessException('No value provided for primary key.');
+            }
+
+            $success = self::deleteById($this->getData(self::getPrimaryKey()));
+
+            return $returnObject ? $this : $success;
         }
 
         private function hydrate(array $data) : Model {
