@@ -29,6 +29,6 @@
                 echo $e->getMessage();
             }
 
-            return ($statement) ? $statement->fetchAll() : array();
+            return ($statement) ? $statement->fetchAll(PDO::FETCH_ASSOC) : array();
         }
     }
