@@ -81,7 +81,11 @@
         }
 
         public static function updateMany(array $models): int {
-            throw new \Exception('Not implemented.');
+            foreach($models as $model) {
+                $model->update();
+            }
+
+            return count($models);
         }
 
         public static function deleteMany(array $models) : int {
