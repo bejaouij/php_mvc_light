@@ -98,6 +98,14 @@
             return $affectedRowsCount;
         }
 
+        public static function refreshMany(array $models): array {
+            foreach($models as $model) {
+                $model->refresh();
+            }
+
+            return $models;
+        }
+
         public static function deleteMany(array $models) : int {
             $affectedRowsCount = 0;
 
@@ -149,7 +157,7 @@
                 $this->setData($this::$primaryKey, $data[0][$this::$primaryKey]);
             }
 
-            #TODO REFRESH THE OBJECT TO RETRIEVE DEFAULT VALUE
+            $this->refresh();
 
             return $this;
         }
@@ -179,6 +187,14 @@
             $query .= $this::$primaryKey . ' = :' . self::getPrimaryKey();
 
             $queryBuilder->query($query, $this->getData());
+
+            return $this;
+        }
+
+        public function refresh() : Model {
+            $model = Test::readById($this->getData(self::getPrimaryKey()));
+
+            $this->hydrate($model->getData());
 
             return $this;
         }
