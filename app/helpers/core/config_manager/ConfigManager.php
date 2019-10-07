@@ -3,7 +3,7 @@
 
     use \InvalidArgumentException;
 
-    define('CORE_HELPERS_DEPTH_LEVEL', 3);
+    defined('CORE_HELPERS_DEPTH_LEVEL') || define('CORE_HELPERS_DEPTH_LEVEL', 3);
 
     final class ConfigManager
     {
