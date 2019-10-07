@@ -51,7 +51,7 @@
         public static function readBy(string $field, string $value) : array {
             $queryBuilder = new QueryBuilder();
 
-            return $queryBuilder->query('SELECT * FROM ' . self::getDatabaseSchema() . '.' . self::getMostLikelyTableName() . ' WHERE ' . $field . ' = ?', [$value]);
+            return $queryBuilder->query('SELECT * FROM ' . self::getFullTableName() . ' WHERE ' . $field . ' ' . $operator . ' ?', [$value]);
         }
 
         public static function readAll() : array {
