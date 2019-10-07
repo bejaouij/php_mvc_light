@@ -31,8 +31,15 @@
             return self::getDatabaseSchema() . '.' . self::getMostLikelyTableName();
         }
 
-        public static function createMany(Array $models) : int {
-            throw new \Exception('Not implemented.');
+        public static function createMany(array $models) : int {
+            $affectedRowsCount = 0;
+
+            foreach($models as $model) {
+                $model->create();
+                $affectedRowsCount++;
+            }
+
+            return $affectedRowsCount;
         }
 
         public static function readById(string $id) : Model {
@@ -81,11 +88,14 @@
         }
 
         public static function updateMany(array $models): int {
+            $affectedRowsCount = 0;
+
             foreach($models as $model) {
                 $model->update();
+                $affectedRowsCount++;
             }
 
-            return count($models);
+            return $affectedRowsCount;
         }
 
         public static function deleteMany(array $models) : int {
