@@ -2,6 +2,7 @@
     namespace App\Models;
 
     use App\Interfaces\Database\CRUD;
+    use App\Exceptions\InvalidDataAccessException;
     use App\Helpers\Core\Query_Builder\QueryBuilder;
     use App\Helpers\Core\Config_Manager\ConfigManager;
 
@@ -16,6 +17,10 @@
 
         private static function getMostLikelyTableName() {
             return get_called_class()::$tableName ? get_called_class()::$tableName : (strtolower((new \ReflectionClass(get_called_class()))->getShortName()));
+        }
+        
+        private static function getPrimaryKey() {
+            return get_called_class()::$primaryKey;
         }
 
         private static function getDatabaseSchema() {
@@ -32,7 +37,7 @@
             $calledClass = get_called_class();
             $model = new $calledClass();
 
-            $data = $queryBuilder->query('SELECT * FROM ' . self::getDatabaseSchema() . '.' . self::getMostLikelyTableName() . ' WHERE ' . get_called_class()::$primaryKey . ' = ?', [$id]);
+            $data = $queryBuilder->query('SELECT * FROM ' . self::getDatabaseSchema() . '.' . self::getMostLikelyTableName() . ' WHERE ' . self::getPrimaryKey() . ' = ?', [$id]);
 
             if(count($data) > 0) {
                 $data = array_shift($data);
@@ -73,6 +78,10 @@
 
         public function create() : Model {
             $queryBuilder = new QueryBuilder();
+            
+            if(count($this->getData()) == 0) {
+                throw new InvalidDataAccessException('No data to insert.');
+            }
 
             $query = 'INSERT INTO ' . $this::getDatabaseSchema() . '.' . $this::getMostLikelyTableName() . '(';
 
@@ -84,7 +93,7 @@
             }
 
             $query = substr_replace($query, ') RETURNING ', '-2');
-            $query .= get_called_class()::$primaryKey;
+            $query .= self::getPrimaryKey();
 
             $data = $queryBuilder->query($query, $this->getData());
 
@@ -96,7 +105,32 @@
         }
 
         public function update() : Model {
-            throw new \Exception('Not implemented.');
+            $queryBuilder = new QueryBuilder();
+
+            if(empty($this->getData(self::getPrimaryKey()))) {
+                throw new InvalidDataAccessException('No value provided for primary key.');
+            }
+
+            if(count($this->getData()) == 1) {
+                throw new InvalidDataAccessException('No data to update.');
+            }
+
+            $dataToUpdate = $this->getData();
+            unset($dataToUpdate[self::getPrimaryKey()]);
+
+            $query = 'UPDATE ' . $this::getDatabaseSchema() . '.' . $this::getMostLikelyTableName() . ' SET ';
+
+            foreach(array_keys($dataToUpdate) as $column) {
+                $query .= $column . ' = :' . $column . ', ';
+            }
+
+            $query = substr_replace($query, ' WHERE ', -2);
+
+            $query .= $this::$primaryKey . ' = :' . self::getPrimaryKey();
+
+            $queryBuilder->query($query, $this->getData());
+
+            return $this;
         }
 
         public function delete() : Model {
@@ -115,7 +149,7 @@
             return !is_null($field) ? $this->_data[$field] : $this->_data;
         }
 
-        public function setData(string $field, string $value) : void {
+        public function setData(string $field, ?string $value) : void {
             $this->_data[$field] = $value;
         }
     }
