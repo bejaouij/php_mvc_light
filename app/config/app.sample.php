@@ -3,5 +3,6 @@
 
     return [
         'root_url' => '[ROOT_URL]',
-        'root_dir' => '[ROOT_DIR]'
+        'root_dir' => '[ROOT_DIR]',
+        'display_errors' => '[DISPLAY_ERRORS]'
     ];
